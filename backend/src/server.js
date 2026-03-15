@@ -6,7 +6,9 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIo = require('socket.io');
-require('dotenv').config();
+// Load .env only in development — on Render, env vars come from the dashboard
+// override:false means Render's env vars always take priority
+require('dotenv').config({ override: false });
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -109,15 +111,20 @@ app.use(errorHandler);
 // ─── Start Server ────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8000;
 
+// Catch listen errors explicitly so they appear in Render logs
+server.on('error', (err) => {
+  console.error('❌ Server error:', err.message);
+  process.exit(1);
+});
+
 const startServer = async () => {
   try {
     await connectDB();
-    // Listen on 0.0.0.0 so Render can bind to the correct interface
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error.message);
     process.exit(1);
   }
 };

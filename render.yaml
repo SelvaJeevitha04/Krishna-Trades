@@ -2,7 +2,7 @@ services:
   - type: web
     name: krishna-trades-api
     env: node
-    region: singapore  # Closest to India
+    region: singapore
     plan: free
     rootDir: backend
     buildCommand: npm install
@@ -11,10 +11,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      # ⚠️  Copy these values from your .env and paste them in Render dashboard manually
+      # DO NOT put real secrets in render.yaml — use the Render dashboard instead
       - key: MONGODB_URI
-        sync: false   # Set manually in Render dashboard (keep secrets safe)
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: JWT_REFRESH_SECRET
@@ -24,7 +24,7 @@ services:
       - key: JWT_REFRESH_EXPIRE
         value: 30d
       - key: FRONTEND_URL
-        sync: false   # Set after Vercel deployment
+        sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
