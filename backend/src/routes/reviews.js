@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const { createReview, getProductReviews } = require('../controllers/reviewController');
+const { authenticate } = require('../middleware/auth');
+
+router.route('/:productId')
+  .get(getProductReviews)
+  .post(authenticate, createReview);
+
+module.exports = router;
