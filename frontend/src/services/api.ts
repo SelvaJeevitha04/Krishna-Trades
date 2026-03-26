@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { ApiResponse, PaginatedResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Use the Vite proxy during local development (/api) instead of specifying the full URL
+// This avoids CORS issues on localhost.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 
 const api = axios.create({

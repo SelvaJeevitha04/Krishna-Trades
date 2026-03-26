@@ -31,22 +31,34 @@ const server = http.createServer(app);
 // Allows localhost (dev), any *.vercel.app subdomain, and FRONTEND_URL (prod)
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow matching for localhost on any port during development
+    const isLocalhost = origin && (
+      origin.startsWith('http://localhost') || 
+      origin.startsWith('http://127.0.0.1') ||
+      origin.startsWith('http://192.168.') ||
+      origin.startsWith('http://10.') ||
+      origin.startsWith('http://172.')
+    );
+
     // Allow no-origin requests (Postman, mobile apps, server-to-server)
-    if (!origin) return callback(null, true);
+    if (!origin || (process.env.NODE_ENV !== 'production' && isLocalhost)) {
+      return callback(null, true);
+    }
+    
     // Allow any Vercel preview / production URL
     if (origin.endsWith('.vercel.app')) return callback(null, true);
+    
     // Allow explicit list
     const whitelist = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000',
       process.env.FRONTEND_URL,
     ].filter(Boolean);
-    if (whitelist.includes(origin)) return callback(null, true);
+    
+    if (whitelist.some(item => origin === item)) return callback(null, true);
     callback(new Error(`CORS: origin "${origin}" not allowed`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
 // ─── Socket.io ───────────────────────────────────────────────────────────────
@@ -73,13 +85,28 @@ app.set('io', io);
 // ─── Rate Limiting ───────────────────────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 300 : 100,
+  max: process.env.NODE_ENV === 'production' ? 300 : 1000,
 });
 
 // ─── Middleware ──────────────────────────────────────────────────────────────
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// In development, we relax some helmet settings to avoid CORS/403 issues
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginOpenerPolicy: { policy: 'unsafe-none' },
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+}));
+
 app.use(cors(corsOptions));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Logger for debugging API calls
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'No Origin'}`);
+    next();
+  });
+}
+
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

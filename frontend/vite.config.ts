@@ -12,6 +12,11 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/socket.io': {
+        target: 'http://localhost:8000',
+        ws: true, // Enable WebSocket proxying
+        changeOrigin: true,
+      },
     },
   },
   build: {
